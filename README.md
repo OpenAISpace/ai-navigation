@@ -27,7 +27,7 @@ AI 导航是一个现代化的人工智能网站导航系统，致力于帮助�
 
 ### 示例站点
 
-- [AI 导航](https://ainavix.com) - 发现、分享和收藏优质 AI 工具与资源
+- [AI 导航](https://ai-navigation-sz5y.vercel.app/) - 发现、分享和收藏优质 AI 工具与资源
 
 ### 界面预览
 
