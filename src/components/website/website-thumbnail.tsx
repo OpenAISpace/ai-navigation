@@ -21,6 +21,7 @@ export function WebsiteThumbnail({
   className,
 }: WebsiteThumbnailProps) {
   const [imageError, setImageError] = useState(false);
+  const [faviconError, setFaviconError] = useState(false);
   const hostname = new URL(url).hostname;
   const faviconUrl = `https://icon.horse/icon/${hostname}`;
   const thumbnailSrc = thumbnail_base64 || thumbnail || "";
@@ -34,21 +35,18 @@ export function WebsiteThumbnail({
           className
         )}
       >
-        <Image
-          src={faviconUrl}
-          alt={title}
-          width={20}
-          height={20}
-          className="w-5 h-5"
-          unoptimized
-          onError={(e) => {
-            // @ts-ignore - nextjs Image 组件的 error 事件类型定义问题
-            e.target.style.display = "none";
-            // @ts-ignore
-            e.target.nextElementSibling?.classList.remove("hidden");
-          }}
-        />
-        <Globe className="h-5 w-5 text-primary/50 hidden" />
+        {!faviconError ? (
+          <Image
+            src={faviconUrl}
+            alt={title}
+            width={20}
+            height={20}
+            className="w-5 h-5"
+            onError={() => setFaviconError(true)}
+          />
+        ) : (
+          <Globe className="h-5 w-5 text-primary/50" />
+        )}
       </div>
     );
   }
@@ -67,7 +65,8 @@ export function WebsiteThumbnail({
         fill
         sizes="40px"
         className="object-cover"
-        unoptimized
+        placeholder={thumbnail_base64 ? "blur" : "empty"}
+        blurDataURL={thumbnail_base64 ? `data:image/png;base64,${thumbnail_base64}` : undefined}
         onError={() => setImageError(true)}
       />
     </div>

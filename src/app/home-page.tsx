@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useAtom } from "jotai";
 import {
   motion,
@@ -43,7 +43,6 @@ export default function HomePage({
   const heroScale = useTransform(scrollY, [0, 400], [1, 0.9]);
   const heroTranslateY = useTransform(scrollY, [0, 400], [0, -100]);
   const isScrolled = useTransform(scrollY, (value) => value > 300);
-  const [filteredWebsites, setFilteredWebsites] = useState<Website[]>([]);
 
   // 初始化数据
   useEffect(() => {
@@ -51,11 +50,11 @@ export default function HomePage({
     setCategories(initialCategories);
   }, [initialWebsites, initialCategories, setWebsites, setCategories]);
 
-  // 处理搜索和分类过滤
-  useEffect(() => {
-    if (!websites) return;
+  // 处理搜索和分类过滤 - 使用 useMemo 缓存结果
+  const filteredWebsites = useMemo(() => {
+    if (!websites) return [];
 
-    const filtered = websites.filter((website) => {
+    return websites.filter((website) => {
       const matchesSearch =
         !searchQuery ||
         website.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -66,8 +65,6 @@ export default function HomePage({
 
       return matchesSearch && matchesCategory;
     });
-
-    setFilteredWebsites(filtered);
   }, [websites, searchQuery, selectedCategory]);
 
   // 处理主题切换
@@ -86,10 +83,11 @@ export default function HomePage({
 
   return (
     <div className="relative min-h-screen">
-      {/* Animated Background */}
+      {/* Animated Background - 添加 will-change 优化性能 */}
       <motion.div
         className="fixed inset-0 -z-10 overflow-hidden"
         initial={false}
+        style={{ willChange: "opacity" }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background" />
         <motion.div
