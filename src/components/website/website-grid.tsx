@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAtomValue, useAtom } from "jotai";
 import { isAdminModeAtom, isCompactModeAtom, websitesAtom } from "@/lib/atoms";
@@ -13,7 +14,6 @@ import { Globe } from "lucide-react";
 interface WebsiteGridProps {
   websites: Website[];
   categories: Category[];
-  // onVisit: (website: Website) => void;
   className?: string;
 }
 
@@ -27,25 +27,50 @@ export default function WebsiteGrid({
   const [isCompact, setIsCompact] = useAtom(isCompactModeAtom);
   const [, setWebsites] = useAtom(websitesAtom);
 
-  const handleVisit = async (website: Website) => {
-    fetch(`/api/websites/${website.id}/visit`, { method: "POST" });
+  const handleVisit = (website: Website) => {
+    window.open(website.url, "_blank");
+
+    fetch(`/api/websites/${website.id}/visit`, { method: "POST" })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.code === 200 && data.data?.visits !== undefined) {
+          setWebsites((prevWebsites) =>
+            prevWebsites.map((w) =>
+              w.id === website.id ? { ...w, visits: data.data.visits } : w
+            )
+          );
+        } else {
+          setWebsites((prevWebsites) =>
+            prevWebsites.map((w) =>
+              w.id === website.id ? { ...w, visits: w.visits + 1 } : w
+            )
+          );
+        }
+      })
+      .catch(console.error);
+
     fetch(`/api/websites/active`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: website.url, id: website.id }),
-    });
-
-    window.open(website.url, "_blank");
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.code === 200 && data.data?.active !== undefined) {
+          setWebsites((prevWebsites) =>
+            prevWebsites.map((w) =>
+              w.id === website.id ? { ...w, active: data.data.active } : w
+            )
+          );
+        }
+      })
+      .catch(console.error);
   };
 
   const handleStatusUpdate = async (id: number, status: Website["status"]) => {
-    fetch(`/api/websites/${id}/status`, {
+    await fetch(`/api/websites/${id}/status`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
 
@@ -60,64 +85,69 @@ export default function WebsiteGrid({
     });
   };
 
+  const handleLike = (id: number, newLikes: number) => {
+    setWebsites((prevWebsites) =>
+      prevWebsites.map((w) => (w.id === id ? { ...w, likes: newLikes } : w))
+    );
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className={cn("relative min-h-[500px]", className)}
-      layout
-    >
+    <motion.div className={cn("relative min-h-[500px]", className)}>
       <ViewModeToggle isCompact={isCompact} onChange={setIsCompact} />
 
-      <motion.div
-        layout
-        className={cn(
-          "grid gap-2 sm:gap-4",
-          isCompact
-            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-            : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        )}
-      >
-        <AnimatePresence mode="popLayout">
-          {!websites || websites.length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="col-span-full flex items-center justify-center"
-            >
-              <div className="text-center space-y-4">
-                <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center mx-auto">
-                  <Globe className="w-10 h-10 text-primary/40" />
-                </div>
-                <div>
-                  <p className="text-lg font-medium text-foreground/80">
-                    暂无网站
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    当前分类下还没有添加任何网站
-                  </p>
-                </div>
+      <AnimatePresence mode="wait">
+        {!websites || websites.length === 0 ? (
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0, filter: "blur(10px)" }}
+            animate={{ opacity: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, filter: "blur(10px)" }}
+            transition={{ duration: 0.15 }}
+            className="flex items-center justify-center py-20"
+          >
+            <div className="text-center space-y-4">
+              <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center mx-auto">
+                <Globe className="w-10 h-10 text-primary/40" />
               </div>
-            </motion.div>
-          ) : (
-            websites.map((website, index) => (
+              <div>
+                <p className="text-lg font-medium text-foreground/80">
+                  暂无网站
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  当前分类下还没有添加任何网站
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="grid"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={cn(
+              "grid gap-y-4 gap-x-3",
+              isCompact
+                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            )}
+          >
+            {websites.map((website, index) => (
               <motion.div
                 key={website.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, filter: "blur(10px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
                 transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 30,
-                  delay: index * 0.05,
+                  duration: 0.15,
+                  delay: Math.min(index * 0.02, 0.2),
+                  ease: "easeOut",
                 }}
               >
                 {isCompact ? (
-                  <CompactCard website={website} onVisit={handleVisit} />
+                  <CompactCard
+                    website={website}
+                    onVisit={handleVisit}
+                    onLike={handleLike}
+                  />
                 ) : (
                   <WebsiteCard
                     website={website}
@@ -127,13 +157,14 @@ export default function WebsiteGrid({
                     isAdmin={isAdmin}
                     onVisit={handleVisit}
                     onStatusUpdate={handleStatusUpdate}
+                    onLike={handleLike}
                   />
                 )}
               </motion.div>
-            ))
-          )}
-        </AnimatePresence>
-      </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
