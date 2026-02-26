@@ -49,9 +49,9 @@ AI 导航是一个现代化的人工智能网站导航系统，致力于帮助�
 
 ##### 动画效果
 
-![](/public/all.gif)
-![](/public/footer.gif)
-![](/public/header-1735608882123.gif)
+![头部动画效果](/public/header-1735608882123.gif)
+![全部动画效果](/public/all.gif)
+![底部动画效果](/public/footer.gif)
 
 ## 🛠️ 开发步骤
 
@@ -69,8 +69,8 @@ AI 导航是一个现代化的人工智能网站导航系统，致力于帮助�
 2. 克隆项目到本地:
 
 ```bash
-git clone https://github.com/liyown/AI-NAV.git
-cd AI-NAV
+git clone https://github.com/OpenAISpace/ai-navigation.git
+cd ai-navigation
 ```
 
 3. 安装项目依赖:
@@ -83,9 +83,9 @@ npm install
 
 ```bash
 # 复制环境变量模板
-cp .env.example .env.local
+cp .env.example .env
 
-# 编辑 .env.local 文件，填入必要的环境变量
+# 编辑 .env 文件，填入必要的环境变量
 ```
 
 5. 初始化数据库:
@@ -235,42 +235,22 @@ npm run start
 ### 网站管理
 
 - **网站提交**
-
   - 支持手动填写和自动抓取
-  - 分类管理和标签系统
+  - 分类管理
   - 审核流程和状态追踪
+- **访问统计**
+  - 记录网站访问次数
+  - 显示网站点赞数
+- **网站检测**
+  - 自动检测网站可访问性
+  - 实时显示网站状态
 
-- **资讯管理**
-  - AI 相关新闻和资讯
-  - 自动获取文章摘要
-  - 支持多媒体内容
+### 管理后台
 
-### 浏览器扩展
-
-- **一键收藏**
-  - 支持快速收藏网站和资讯
-  - 自动提取网页元数据
-  - 快捷键操作支持
-
-#### 安装油猴脚本
-
-1. 安装浏览器扩展
-
-   - Chrome: [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
-   - Firefox: [Tampermonkey](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/)
-   - Edge: [Tampermonkey](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd)
-
-2. 安装收藏脚本
-
-   - 点击 [安装脚本](https://ai-nav.vercel.app/scripts/ai-nav-collector.user.js)
-   - 或手动复制 `scripts/ai-nav-collector.user.js` 内容创建新脚本
-
-3. 使用方法
-   - 浮动按钮：页面右下角的收藏按钮
-   - 快捷键：
-     - `Alt + S`: 收藏网站
-     - `Alt + N`: 收藏资讯
-   - 右键菜单：通过 Tampermonkey 扩展菜单操作
+- 管理员登录认证
+- 网站审核管理
+- 分类管理
+- 主题设置
 
 ## 🛠️ 技术栈
 
@@ -303,10 +283,12 @@ npm run start
   - ESLint
   - Prettier
 
-## 📄 开源协议 本项目采用 [MIT](LICENSE) 协议开源。
+## 📄 开源协议
+
+本项目采用 [MIT](LICENSE) 协议开源。
 
 <div align="center">
 
-**AI 导航** © 2024 Made with ❤️
+**AI 导航** © 2026 Made with ❤️
 
 </div>
