@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
 ![React](https://img.shields.io/badge/react-%5E18.2.0-blue.svg)
-![Next.js](https://img.shields.io/badge/next.js-14.1.0-black)
+![Next.js](https://img.shields.io/badge/next.js-15.1.0-black)
 
 </div>
 
@@ -136,7 +136,6 @@ git push origin feature/your-feature-name
 2. 在 [Vercel](https://vercel.com/) 注册账号并连接 GitHub
 
 3. 在 Vercel 中导入项目:
-
    - 点击 "New Project"
    - 选择你 fork 的仓库
    - 配置项目设置:
@@ -146,13 +145,28 @@ git push origin feature/your-feature-name
 
 4. 配置环境变量:
 
-   - 在 Vercel 项目设置中添加必要的环境变量
-   - 确保所有 .env.local 中的变量都已配置
+   在 Vercel 项目设置的 "Environment Variables" 中添加以下变量：
+
+   | 变量名 | 必填 | 说明 | 示例 |
+   |--------|------|------|------|
+   | `DATABASE_URL` | ✅ | PostgreSQL 数据库连接字符串 | `postgres://user:pass@host:5432/db` |
+   | `DIRECT_URL` | ✅ | PostgreSQL 直连地址（用于 Prisma） | `postgres://user:pass@host:5432/db` |
+   | `ADMIN_PASSWORD` | ✅ | 管理员登录密码 | `your-password` |
+   | `JWT_SECRET` | ✅ | JWT 密钥，建议随机字符串 | `random-secret-key` |
+   | `OSS_REGION` | ❌ | OSS 区域（如使用阿里云） | `oss-cn-hangzhou` |
+   | `OSS_BUCKET` | ❌ | OSS Bucket 名称 | `your-bucket` |
+   | `OSS_ACCESS_KEY` | ❌ | OSS Access Key | `your-key` |
+   | `OSS_ACCESS_SECRET` | ❌ | OSS Access Secret | `your-secret` |
+   | `OSS_ENDPOINT` | ❌ | OSS Endpoint | `oss-cn-hangzhou.aliyuncs.com` |
 
 5. 部署项目:
    - 点击 "Deploy"
    - 等待部署完成
    - 访问分配的域名检查部署结果
+
+6. 初始化数据（首次部署后）:
+   - 访问 `/admin` 使用设置的密码登录
+   - 或运行 `npm run init-data` 初始化种子数据
 
 ### 2. 自托管部署
 
@@ -170,10 +184,51 @@ docker build -t ai-nav .
 docker run -d \
   -p 3000:3000 \
   -e DATABASE_URL=your_database_url \
-  -e NEXT_PUBLIC_API_URL=your_api_url \
+  -e DIRECT_URL=your_direct_url \
+  -e ADMIN_PASSWORD=your_password \
+  -e JWT_SECRET=your_jwt_secret \
   --name ai-nav \
   ai-nav
 ```
+
+#### 手动部署
+
+```bash
+# 1. 安装依赖
+npm install
+
+# 2. 配置环境变量
+cp .env.example .env
+# 编辑 .env 填入数据库连接等信息
+
+# 3. 初始化数据库
+npx prisma migrate dev
+
+# 4. 初始化种子数据（可选）
+npm run init-data
+
+# 5. 构建项目
+npm run build
+
+# 6. 启动生产服务器
+npm run start
+```
+
+### 3. 数据库准备
+
+推荐使用以下免费/付费 PostgreSQL 服务：
+
+- **Supabase** (推荐免费)
+  1. 创建项目后获取 `DATABASE_URL` 和 `DIRECT_URL`
+  2. 在 Settings > API 中获取连接字符串
+
+- **Neon**
+  1. 创建项目后获取连接字符串
+  2. 注意：Neon 需要修改连接字符串
+
+- **Railway**
+  1. 创建 PostgreSQL 插件
+  2. 获取连接字符串
 
 ## 🔧 核心功能
 
@@ -221,14 +276,14 @@ docker run -d \
 
 - **前端框架**:
 
-  - Next.js 14 (App Router)
+  - Next.js 15 (App Router)
   - React 18
   - TypeScript
 
 - **状态管理**:
 
-  - Zustand
-  - React Query
+  - Jotai
+  - React Query / SWR
 
 - **UI 框架**:
 
@@ -240,12 +295,6 @@ docker run -d \
 
   - PostgreSQL
   - Prisma ORM
-  - Redis
-
-- **认证授权**:
-
-  - NextAuth.js
-  - JWT
 
 - **工具链**:
   - React Hook Form
