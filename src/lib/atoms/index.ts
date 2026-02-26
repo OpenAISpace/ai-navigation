@@ -8,6 +8,7 @@ export const searchQueryAtom = atom("");
 export const selectedCategoryAtom = atom<number | null>(1);
 export const isAdminModeAtom = atomWithStorage("isAdminMode", false);
 export const isCompactModeAtom = atomWithStorage("isCompactMode", false);
+export const layoutModeAtom = atomWithStorage<"top" | "sidebar">("layoutMode", "top");
 
 // OSS 设置
 export interface OSSSettings {
