@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAtomValue, useAtom } from "jotai";
 import { isAdminModeAtom, isCompactModeAtom, websitesAtom } from "@/lib/atoms";
@@ -9,13 +9,15 @@ import { CompactCard } from "./compact-card";
 import { ViewModeToggle } from "./view-mode-toggle";
 import { cn } from "@/lib/utils/utils";
 import type { Website, Category } from "@/lib/types";
-import { Globe } from "lucide-react";
+import { Globe, Loader2 } from "lucide-react";
 
 interface WebsiteGridProps {
   websites: Website[];
   categories: Category[];
   className?: string;
 }
+
+const PAGE_SIZE = 20;
 
 export default function WebsiteGrid({
   websites,
@@ -26,6 +28,39 @@ export default function WebsiteGrid({
   const { toast } = useToast();
   const [isCompact, setIsCompact] = useAtom(isCompactModeAtom);
   const [, setWebsites] = useAtom(websitesAtom);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [isLoading, setIsLoading] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // 重置可见数量当网站列表变化时
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [websites.length]);
+
+  // 无限滚动
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoading && visibleCount < websites.length) {
+          setIsLoading(true);
+          setTimeout(() => {
+            setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, websites.length));
+            setIsLoading(false);
+          }, 300);
+        }
+      },
+      { rootMargin: "100px" }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [websites.length, isLoading, visibleCount]);
+
+  const visibleWebsites = websites.slice(0, visibleCount);
+  const hasMore = visibleCount < websites.length;
 
   const handleVisit = (website: Website) => {
     window.open(website.url, "_blank");
@@ -131,7 +166,7 @@ export default function WebsiteGrid({
                 : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             )}
           >
-            {websites.map((website, index) => (
+            {visibleWebsites.map((website, index) => (
               <motion.div
                 key={website.id}
                 initial={{ opacity: 0, filter: "blur(10px)" }}
@@ -165,6 +200,26 @@ export default function WebsiteGrid({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 加载更多触发器 */}
+      {hasMore && (
+        <div ref={loadMoreRef} className="flex justify-center py-8">
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>加载中...</span>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* 显示加载状态 */}
+      {websites.length > 0 && (
+        <div className="text-center text-sm text-muted-foreground py-4">
+          {visibleCount} / {websites.length} 个网站
+          {hasMore ? " · 向下滚动加载更多" : " · 已加载全部"}
+        </div>
+      )}
     </motion.div>
   );
 }
