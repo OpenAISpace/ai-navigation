@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { AjaxResponse } from "@/lib/utils";
+import { invalidateCache } from "@/lib/db/cache";
 
 const prisma = new PrismaClient();
 
@@ -23,6 +24,9 @@ export async function POST(
       where: { id: websiteId },
       data: { visits: { increment: 1 } },
     });
+
+    // 清除网站列表缓存
+    invalidateCache("approved-websites");
 
     return NextResponse.json(
       AjaxResponse.ok({ visits: updatedWebsite.visits })

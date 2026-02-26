@@ -10,6 +10,7 @@ import {
   ArrowUpRight,
   Heart,
   Circle,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import {
@@ -17,7 +18,7 @@ import {
   sharedLayoutTransition,
 } from "@/ui/animation/variants/animations";
 import type { Website, Category } from "@/lib/types";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { WebsiteThumbnail } from "./website-thumbnail";
 import { toast } from "@/hooks/use-toast";
 import { useCardTilt } from "@/hooks/use-card-tilt";
@@ -34,6 +35,7 @@ interface WebsiteCardProps {
   isAdmin: boolean;
   onVisit: (website: Website) => void;
   onStatusUpdate: (id: number, status: Website["status"]) => void;
+  onLike?: (id: number, newLikes: number) => void;
 }
 
 export function WebsiteCard({
@@ -42,9 +44,20 @@ export function WebsiteCard({
   isAdmin,
   onVisit,
   onStatusUpdate,
+  onLike,
 }: WebsiteCardProps) {
   const [likes, setLikes] = useState(website.likes);
+  const [isLiking, setIsLiking] = useState(false);
+  const prevLikesRef = useRef(website.likes);
   const { cardRef, tiltProps } = useCardTilt();
+
+  // 当 website.likes 从外部更新时，同步本地状态
+  useEffect(() => {
+    if (website.likes !== prevLikesRef.current) {
+      setLikes(website.likes);
+      prevLikesRef.current = website.likes;
+    }
+  }, [website.likes]);
 
   const statusColors: Record<Website["status"], string> = {
     pending: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
@@ -61,27 +74,55 @@ export function WebsiteCard({
   };
 
   const handleLike = async () => {
+    // 如果正在加载中或已点赞，则不处理
     const key = `website-${website.id}-liked`;
     const lastLiked = localStorage.getItem(key);
     const now = new Date().getTime();
+    const oneDay = 24 * 60 * 60 * 1000;
 
-    if (lastLiked) {
-      const lastLikedTime = parseInt(lastLiked);
-      const oneDay = 24 * 60 * 60 * 1000; // 24小时的毫秒数
+    if (isLiking) return;
 
-      if (now - lastLikedTime < oneDay) {
-        toast({
-          title: "已点赞",
-          description: "每天只能点赞一次哦，明天再来吧 (｡•́︿•̀｡)",
-        });
-        return;
-      }
+    if (lastLiked && now - parseInt(lastLiked) < oneDay) {
+      toast({
+        title: "已点赞",
+        description: "每天只能点赞一次哦，明天再来吧 (｡•́︿•̀｡)",
+      });
+      return;
     }
 
-    const method = "POST";
-    fetch(`/api/websites/${website.id}/like`, { method });
-    localStorage.setItem(key, now.toString());
-    setLikes(likes + 1);
+    setIsLiking(true);
+
+    try {
+      const response = await fetch(`/api/websites/${website.id}/like`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      localStorage.setItem(key, now.toString());
+      // 使用 API 返回的最新 likes 数
+      let newLikes: number;
+      if (data.code === 200 && data.data?.likes !== undefined) {
+        newLikes = data.data.likes;
+        setLikes(newLikes);
+      } else {
+        newLikes = likes + 1;
+        setLikes(newLikes);
+      }
+      // 回调父组件更新全局状态
+      onLike?.(website.id, newLikes);
+      toast({
+        title: "点赞成功",
+        description: "感谢您的支持！",
+      });
+    } catch (error) {
+      console.error("点赞失败:", error);
+      toast({
+        title: "点赞失败",
+        description: "请稍后重试",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   return (
@@ -100,6 +141,7 @@ export function WebsiteCard({
         layoutId={`website-${website.id}`}
         transition={sharedLayoutTransition}
         className="h-full"
+        style={{ willChange: "transform" }}
       >
         <Card
           className={cn(
@@ -218,20 +260,31 @@ export function WebsiteCard({
                   variant="outline"
                   size="sm"
                   onClick={handleLike}
+                  disabled={isLiking}
                   className={cn(
                     "h-7 w-7 sm:h-8 sm:w-8 p-0",
                     "bg-white/[0.02] backdrop-blur-xl border-white/10",
                     "hover:bg-red-500/5 hover:border-red-500/20 hover:text-red-500",
                     "dark:bg-white/[0.01] dark:hover:bg-red-500/10",
-                    "transition-all duration-300"
+                    "transition-all duration-300",
+                    isLiking && "opacity-50 cursor-not-allowed"
                   )}
                 >
-                  <motion.div
-                    whileTap={{ scale: 1.4 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </motion.div>
+                  {isLiking ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <Loader2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      whileTap={{ scale: 1.4 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
+                    </motion.div>
+                  )}
                 </Button>
 
                 {isAdmin && website.status !== "approved" && (
