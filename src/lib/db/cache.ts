@@ -1,11 +1,21 @@
-"use server";
-
 const cache = new Map();
 const CACHE_STATS = {
   hits: 0,
   misses: 0,
   total: 0,
 };
+
+// 清除指定缓存
+export function invalidateCache(queryName: string): void {
+  cache.delete(queryName);
+  console.log(`[Cache] 已清除缓存: ${queryName}`);
+}
+
+// 清除所有缓存
+export async function invalidateAllCache(): Promise<void> {
+  cache.clear();
+  console.log("[Cache] 已清除所有缓存");
+}
 
 // Add cache persistence check
 function shouldRefreshCache(
